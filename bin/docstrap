@@ -1,0 +1,56 @@
+##############################################################################
+# This is to be used as an interpreter by another script to execute the
+# referring script via bash with some helpful basic functionality.
+#
+# It will source 'include files' as described below as well as setting some
+# helpful vars.
+#
+# Any files in the directory where the referencing script is running that match
+# <calling script name>_*.inc will be sourced in the order returned from the
+# expansion of the glob pattern mentioned previously, so alphabetical
+# ordering.  Thus if you wish to control the order more explicitly you can
+# name your includes <calling script name>_01_*.inc,
+# <calling script name>_02_*.inc and so on.
+##############################################################################
+# begin include processing
+FILE_BEING_BOOTSTRAPPED=$1
+BOOTSTRAPPED_FILE_NAME="$(basename ${FILE_BEING_BOOTSTRAPPED})"
+BOOTSTRAPPED_FILE_DIR="$( cd "$( dirname "${FILE_BEING_BOOTSTRAPPED}" )" && pwd )"
+# convenience for our users, the directory of the script being bootrapped by this
+export MY_DIR=${BOOTSTRAPPED_FILE_DIR}
+export BOOTSTRAP_INCLUDE_LIST=${BOOTSTRAP_INCLUDE_LIST}
+shopt -s nullglob
+for include in ${MY_DIR}/${BOOTSTRAPPED_FILE_NAME}_*.inc
+do
+  INCLUDE_KEY=INCLUDED_${include}
+  # if we find that our include key is _not_ already in our include list
+  # we'll perform the include
+  # this is done by removing $INCLUDE_KEY from $BOOTSTRAP_INCLUDE_LIST and comparing
+  # the resultant to BOOTSTRAP_INCLUDE_LIST, if equal, nothing has been removed and thus
+  # $INCLUDE_KEY is not in $BOOTSTRAP_INCLUDE_LIST
+  if [ "${BOOTSTRAP_INCLUDE_LIST//${INCLUDE_KEY}//}" == "${BOOTSTRAP_INCLUDE_LIST}" ]
+  then
+    [ -n "${DEBUG_BASHSTRAP}" ] && echo "including file: ${include}" >&2
+    source ${include}
+    BOOTSTRAP_INCLUDE_LIST=${BOOTSTRAP_INCLUDE_LIST}:${INCLUDE_KEY}
+  fi
+done
+shopt -u nullglob
+# if we have a file in the same directory as our bootstrappED file named utils.inc, include
+# it as well this a global include as the previous were file specific includes
+if [ -f "${BOOTSTRAPPED_FILE_DIR}/utils.inc" ]; then
+  source "${BOOTSTRAPPED_FILE_DIR}/utils.inc"
+  [ -n "${DEBUG_BASHSTRAP}" ] && echo "sourced ${BOOTSTRAPPED_FILE_DIR}/utils.inc"
+fi
+[ -n "${DEBUG_BASHSTRAP}" ]
+[ -n "${DEBUG_BASHSTRAP}" ] && echo MY_DIR ${MY_DIR}
+[ -n "${DEBUG_BASHSTRAP}" ] && echo BOOTSTRAPPED_FILE_NAME ${BOOTSTRAPPED_FILE_NAME}
+# handle our docopt validation, including replacing our ${ME} with the name of the file
+help="$(grep "^### " "${BOOTSTRAPPED_FILE_DIR}/${BOOTSTRAPPED_FILE_NAME}" | cut -c 5- |  sed -e "s[\${ME}[${BOOTSTRAPPED_FILE_NAME}[g")"
+
+# # again, we want whatever comes out of docopt to be exported
+set -a
+eval "$(${MY_DIR}/docopts -h "$help" : "$@")"
+set +a
+
+bash "${BOOTSTRAPPED_FILE_DIR}/${BOOTSTRAPPED_FILE_NAME}" "$@"
