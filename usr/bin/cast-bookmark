@@ -1,0 +1,8 @@
+#! /usr/bin/env docstrap
+### Usage:
+###   ${ME} <url>
+### --help
+###
+### Bookmark a url
+
+printf "The url is %s\n" "${url}"
