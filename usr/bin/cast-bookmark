@@ -6,3 +6,4 @@
 ### Bookmark a url
 
 printf "The url is %s\n" "${url}"
+store_file "${url}"
