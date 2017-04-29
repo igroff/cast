@@ -7,3 +7,4 @@
 
 printf "The url is %s\n" "${url}"
 store_file "${url}"
+open_daily_note this-s-daily
