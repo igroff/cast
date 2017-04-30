@@ -1,6 +1,6 @@
 source ${MY_DIR}/lib.inc
 export AWS_CLI=${CAST_AWS_CLI:-aws}
-export S3_STORAGE_LOCATION=${CAST_S3_STORAGE_LOCATION:-"s3://cast.io"}
+export BUCKET_NAME="cast.io"
 export WORKING_DIR=${CAST_WORKING_DIR:-~/.cast}
 export SINGLE_USER=true
 export APP=cast
@@ -53,37 +53,8 @@ function create_daily_storage_path_suffix() {
 
 function open_daily_note(){
   local THE_PATH=$(create_daily_storage_path_suffix "$@")
-  local NOTE_FILE_PATH="${THE_PATH}.md"
-  local LOCAL_PATH="${WORKING_DIR}/${NOTE_FILE_PATH}"
-  local REMOTE_PATH="${S3_STORAGE_LOCATION}/${NOTE_FILE_PATH}"
-  if [ -f "${LOCAL_PATH}" ]; then
-    ${AWS_CLI} s3api head-object --bucket "${S3_STORAGE_LOCATION}" --key "${NOTE_FILE_PATH}"
-    # we have a local copy, so we want to make sure it matches the remote
-    # if it doesn't match the remote, the remote wins so we fetch it over
-    # the local
-  else
-    mkdir -p $(dirname "${LOCAL_PATH}")
-    # we don't already have the file locally, so we fetch it
-    if COPY_RESULT=$(${AWS_CLI} s3 cp "${REMOTE_PATH}" "${LOCAL_PATH}" 2>&1); then
-      # the copy worked, all is good
-      :
-    else
-      if echo "${COPY_RESULT}" | grep 404 | grep 'does not exist' > /dev/null 2>&1; then
-        # it's not remote either, we'll need to create it
-        touch "${LOCAL_PATH}"
-        echo "we don't have it local, we'll need to create it"
-        :
-      else
-        # something really went wronte
-        error "unable to fetch daily note to ${LOCAL_PATH}"
-        error "${COPY_RESULT}"
-      fi
-    fi
-  fi
-  
-  debug "local cached: ${LOCAL_PATH}"
-  debug "remote location: ${REMOTE_PATH}"
-  #mkdir -p $(dirname "${S3_STORAGE_LOCATION}/${THE_PATH}")
+  local LOCAL_PATH="${WORKING_DIR}/${THE_PATH}.md"
+  mkdir -p $(dirname "${LOCAL_PATH}")
   ${EDITOR:-vim} "${LOCAL_PATH}"
 }
 
