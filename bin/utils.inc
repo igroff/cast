@@ -1,6 +1,5 @@
 source ${MY_DIR}/lib.inc
 export AWS_CLI=${CAST_AWS_CLI:-aws}
-export BUCKET_NAME="cast.io"
 export WORKING_DIR=${CAST_WORKING_DIR:-~/.cast}
 export SINGLE_USER=true
 export APP=cast
