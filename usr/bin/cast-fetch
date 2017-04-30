@@ -1,10 +1,24 @@
 #! /usr/bin/env docstrap
 ###############################################################################
 ###
-### usage: ${ME}
+### Usage:
+###   ${ME} <url>
 ###
+### --help
 ###
-###
-###
+### Queues up a url for retrieval.
 ###
 ###############################################################################
+
+# all we do here is add the url to the download queue
+
+# make sure our queue dir exists
+mkdir -p "${FETCH_QUEUE_DIR}"
+
+# create a unique queue entry
+ENTRY_ID="$(echo \"${url}\" | md5sum | cut -d ' ' -f 1)"
+
+# store the entry in the queue
+echo "${url}" > "${FETCH_QUEUE_DIR}/${ENTRY_ID}"
+# just to avoid confusion 'n racing, this is the 'ready to process' indicator
+echo "${url}" > "${FETCH_QUEUE_DIR}/${ENTRY_ID}.complete"
