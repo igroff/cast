@@ -1,0 +1,76 @@
+#! /usr/bin/env docstrap
+###############################################################################
+###
+### Usage:
+###   ${ME}
+###
+###
+### --help
+### Processes one entry from the fetch queue, this will
+###
+###
+###############################################################################
+
+# Retrieves the contents of a url to the directory specified, alternately you can
+# specify handling of dupes
+# fetch_file <url> <dir> <dupes>
+#  url   - the url of the resource to be retrieved, supports either http or https
+#  dir   - the directory in which the retieved file will be stored
+#  dupes - If 1, duplicates will be downloaded and stored named with the timestamp the
+#          download was performed, otherwise requests to download urls already fetched
+#          will result in a no-op
+function fetch_file(){
+  local URL_TO_FETCH="${1?You must provide a url to fetch}"
+  local STORE_IN="${2?You must provide a director into which the fetched file will be stored}"
+  local DOWNLOAD_DUPES=${3}
+  # remove supported protocols
+  FILE_NAME=${URL_TO_FETCH#http://}
+  FILE_NAME=${FILE_NAME#https://}
+  # / to _
+  FILE_NAME=${FILE_NAME//\//_}
+
+  # IF we have a querystring, we'll remove it
+  QUERYSTRING_START=$(expr index ${FILE_NAME} \? )
+  if [ ${QUERYSTRING_START} -gt 0 ]; then 
+    FILE_NAME=${FILE_NAME:0:${QUERYSTRING_START} - 1}
+  fi
+
+  # now, if we already have this file we're gonna make our name 
+  # unique
+  if [ -f "${STORE_IN}/${FILE_NAME}" ]; then
+    if [ ${DOWNLOAD_DUPES} -eq 1 ]; then
+      FILE_EXTENSION=${FILE_NAME##*.}
+      FILE_NAME_WO_EXTENSION=${FILE_NAME%.*}
+      FILE_NAME=${FILE_NAME_WO_EXTENSION}.$(date +"%s").${FILE_EXTENSION}
+    else
+      # if we're here we've been asked to download a dupe, but we're set to
+      # not download dupes, so we unset the FILE_NAME
+      unset FILE_NAME
+    fi
+  fi
+
+  # if we have a file name set, we'll download it otherwise we've not got
+  # anything tod download
+  if [ -n "$DEBUG" ]; then
+    [ -n "${FILE_NAME}" ] && curl -s -v -o ${STORE_IN}/${FILE_NAME} $URL_TO_FETCH
+  else
+    [ -n "${FILE_NAME}" ] && curl -s -o ${STORE_IN}/${FILE_NAME} $URL_TO_FETCH
+  fi
+}
+
+mkdir -p "${FETCH_DESTINATION_DIR}"
+# this will enumerate the items requested to be fetched (urls) retrieving one of
+# them at a time, storing the fetched item named using the full url to uniquely
+# identify the file fetched.
+for completedItem in $(find "${FETCH_QUEUE_DIR}" -name '*.complete')
+do
+  urlFile=$(basename --suffix .complete "${completedItem}") 
+  urlToFetch="$(cat \"${FETCH_QUEUE_DIR}/${urlFile}\")"
+  debug "fetching url ${urlToFetch}"
+  # fetch url requested to the directory set, DO NOT download dupes
+  if fetch_file "${urlToFetch}" "${FETCH_DESTINATION_DIR}" 0; then
+    # remove the url from the queue
+    mv "${urlFile}" "${FETCH_COMPLETED_DIR}"
+    rm "${completedItem}"
+  fi
+done

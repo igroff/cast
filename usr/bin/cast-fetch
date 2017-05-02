@@ -21,4 +21,4 @@ ENTRY_ID="$(echo \"${url}\" | md5sum | cut -d ' ' -f 1)"
 # store the entry in the queue
 echo "${url}" > "${FETCH_QUEUE_DIR}/${ENTRY_ID}"
 # just to avoid confusion 'n racing, this is the 'ready to process' indicator
-echo "${url}" > "${FETCH_QUEUE_DIR}/${ENTRY_ID}.complete"
+echo "" > "${FETCH_QUEUE_DIR}/${ENTRY_ID}.complete"

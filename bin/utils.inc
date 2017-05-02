@@ -2,6 +2,7 @@ source ${MY_DIR}/lib.inc
 export AWS_CLI=${CAST_AWS_CLI:-aws}
 export WORKING_DIR=${CAST_WORKING_DIR:-~/.cast}
 export FETCH_QUEUE_DIR="${WORKING_DIR}/fetch-queue"
+export FETCH_DESTINATION_DIR="${WORKING_DIR}/fetch-storage"
 
 
 function create_storage_path() {
