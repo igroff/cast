@@ -1,6 +1,7 @@
 source ${MY_DIR}/lib.inc
 export AWS_CLI=${CAST_AWS_CLI:-aws}
 export WORKING_DIR=${CAST_WORKING_DIR:-~/.cast}
+export DAILY_NOTE_DIR="${DAILY_NOTE_DIR?Can not work without DAILY_NOTE_DIR being set}"
 export FETCH_QUEUE_DIR="${WORKING_DIR}/fetch-queue"
 export FETCH_DESTINATION_DIR="${WORKING_DIR}/fetch-storage"
 
@@ -27,7 +28,7 @@ function create_daily_storage_path_suffix() {
 
 function open_daily_note(){
   local THE_PATH=$(create_daily_storage_path_suffix "$@")
-  local LOCAL_PATH="${WORKING_DIR}/${THE_PATH}.md"
+  local LOCAL_PATH="${DAILY_NOTE_DIR}/${THE_PATH}.md"
   mkdir -p $(dirname "${LOCAL_PATH}")
   ${EDITOR:-vim} "${LOCAL_PATH}"
 }
